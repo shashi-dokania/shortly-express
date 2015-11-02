@@ -2,7 +2,9 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+var bcrypt = require('bcrypt-nodejs');
+var session = require('express-session')
+var cookieParser = require('cookie-parser')
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -20,6 +22,8 @@ app.use(partials());
 app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser('this is not really secret'));
+app.use(session());
 app.use(express.static(__dirname + '/public'));
 
 
@@ -76,7 +80,81 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/signup',
+function(req, res) {
+  res.render('signup');
+});
 
+app.get('/login',
+function(req, res) {
+  res.render('login');
+});
+
+app.post('/signup', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+  var salt = bcrypt.genSaltSync(10);
+  var hash = bcrypt.hashSync(password, salt);
+  
+  // var userObj = db.users.findOne({ username: username, password: hash });
+  new User({  
+    // The query will match these parameters
+    'username': username,
+    'hash': hash,
+    'salt': salt
+    // Will return row with ID 1
+  }).save().then(function(updatedModel) {
+    console.log('User created!');
+  }).catch(function(err) {
+    console.log('Error creating new user', err);
+  });
+
+  // if(userObj){
+  //     req.session.regenerate(function(){
+  //         req.session.user = userObj.username;
+  //         res.redirect('/restricted');
+  //     });
+  // }
+  // else {
+  //     res.redirect('signup');
+  // }
+});
+
+app.post('/login', function(request, response) {
+ 
+  var username = request.body.username;
+  var password = request.body.password;
+ 
+  var user = new User({  
+    // Query params 
+    'username': username
+  }).fetch().then(function(userData){
+      // Do stuff with fetchedModel
+      console.log(userData);
+      var hash = bcrypt.hashSync(password, userData.attributes.salt);
+      if( hash === userData.attributes.hash){
+        request.session.regenerate(function(){
+          request.session.user = username;
+          response.redirect('/');
+        });
+      } else {
+        console.log('Username or password not matched')
+        response.redirect('/login');
+      }
+  }).catch(function(err) {
+    console.log('Error retriving user', err);
+  });
+
+    // if(username == 'demo' && password == 'demo'){
+    //     request.session.regenerate(function(){
+    //     request.session.user = username;
+    //     response.redirect('/restricted');
+    //     });
+    // }
+    // else {
+    //    res.redirect('login');
+    // }    
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
