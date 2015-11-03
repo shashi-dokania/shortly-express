@@ -3,8 +3,9 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var bcrypt = require('bcrypt-nodejs');
-var session = require('express-session')
-var cookieParser = require('cookie-parser')
+var session = require('express-session');
+var cookieParser = require('cookie-parser');
+var knexSessionStore = require('connect-session-knex')(session);
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -12,6 +13,8 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+
+var sessionStore = new knexSessionStore({knex: db.knex});
 
 var app = express();
 
@@ -22,13 +25,18 @@ app.use(partials());
 app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser('this is not really secret'));
-app.use(session());
+//app.use(cookieParser('this is not really secret'));
+app.use(session({
+  secret: 'this is not really secret',
+  store: sessionStore,
+  //cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } 
+}));
 app.use(express.static(__dirname + '/public'));
 
 
 app.get('/', 
 function(req, res) {
+  console.log(sessionStore);
   res.render('index');
 });
 
@@ -105,6 +113,8 @@ app.post('/signup', function(req, res) {
     // Will return row with ID 1
   }).save().then(function(updatedModel) {
     console.log('User created!');
+    res.redirect('/');
+    res.end();
   }).catch(function(err) {
     console.log('Error creating new user', err);
   });
@@ -143,6 +153,7 @@ app.post('/login', function(request, response) {
       }
   }).catch(function(err) {
     console.log('Error retriving user', err);
+    response.redirect('/login'); 
   });
 
     // if(username == 'demo' && password == 'demo'){

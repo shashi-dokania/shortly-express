@@ -286,20 +286,24 @@ describe('', function() {
 
   }); // 'Account Creation'
 
-  xdescribe('Account Login:', function(){
+  describe('Account Login:', function(){
 
     var requestWithSession = request.defaults({jar: true});
 
-    beforeEach(function(done){
-      new User({
-          'username': 'Phillip',
-          'password': 'Phillip'
-      }).save().then(function(){
-        done()
-      });
-    })
+    // beforeEach(function(done){
+      
+    // })
 
     it('Logs in existing users', function(done) {
+      var optionsPost = {
+        'method': 'POST',
+        'uri': 'http://127.0.0.1:4568/signup',
+        'json': {
+          'username': 'Phillip',
+          'password': 'Phillip'
+        }
+      };
+
       var options = {
         'method': 'POST',
         'uri': 'http://127.0.0.1:4568/login',
@@ -308,11 +312,13 @@ describe('', function() {
           'password': 'Phillip'
         }
       };
-
-      requestWithSession(options, function(error, res, body) {
-        expect(res.headers.location).to.equal('/');
-        done();
-      });
+      
+      request(optionsPost, function(error, res, body) {
+        requestWithSession(options, function(error, res, body) {
+          expect(res.headers.location).to.equal('/');
+          done();
+        });
+      });  
     });
 
     it('Users that do not exist are kept on login page', function(done) {
