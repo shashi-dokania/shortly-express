@@ -31,10 +31,14 @@ h1 {
   float: left;
 }
 
-.navigation .logout {
+.navigation li.logoutContainer {
   float: right;
 }
 
+/*.navigation .logout {
+  float: right;
+}
+*/
 .navigation li a , .logout {
   width: 100px;
   height: 20px;

@@ -39,9 +39,9 @@ app.use(session({
 
 app.use(express.static(__dirname + '/public'));
 
-app.use(sessionChecker({
-  loginUrl: '/login'
-}));
+// app.use(sessionChecker({
+//   loginUrl: '/login'
+// }));
 
 app.get('/', 
 function(req, res) {
@@ -125,8 +125,8 @@ app.post('/signup', function(req, res) {
     // Will return row with ID 1
   }).save().then(function(updatedModel) {
     console.log('User created!');
-    res.redirect('/');
-    res.end();
+    res.redirect('/login');
+    //res.end();
   }).catch(function(err) {
     console.log('Error creating new user', err);
   });
@@ -158,6 +158,14 @@ app.post('/login', function(request, response) {
     response.redirect('/login'); 
   });
   
+});
+
+app.get('/logout', function(request, response) {
+  request.session.destroy();
+  // response.setHeader("Content-Type", "text/html");
+  response.redirect('/login');
+  //response.render('login');
+  //response.end();
 });
 
 /************************************************************/
