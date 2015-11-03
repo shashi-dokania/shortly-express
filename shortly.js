@@ -5,8 +5,10 @@ var bodyParser = require('body-parser');
 var bcrypt = require('bcrypt-nodejs');
 var session = require('express-session');
 var cookieParser = require('cookie-parser');
-//var knexSessionStore = require('connect-session-knex')(session);
-var BookshelfStore = require('connect-bookshelf')(session);
+var sessionChecker = require('./db/custom_middleware/session-checker');
+
+// TODO SAVE SESSION TO DB
+// var BookshelfStore = require('connect-bookshelf')(session);
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -30,30 +32,25 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //app.use(cookieParser('this is not really secret'));
 app.use(session({
   secret: 'this is not really secret',
+  // TODO SAVE SESSION TO DB
   // store: new BookshelfStore({model: Session}),
-  // cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } 
+  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } 
 }));
 
 app.use(express.static(__dirname + '/public'));
 
+app.use(sessionChecker({
+  loginUrl: '/login'
+}));
+
 app.get('/', 
 function(req, res) {
-  console.log(req.session.user)
-  if( req.session.user ){
-  // console.log(req.sessionID);
-  // var cookieSid = req.sessionID;
-  // var savedSession = new Session({  
-  //   'sid': cookieSid
-  // }).fetch().then(function(session){
-  //   console.log('SID found: access granted');
-    res.render('index');
-  } else {
-  // }).catch(function(err) {
-  //   console.log('SID not found');
-    res.render('login');
-  // });
-  }
-
+  // console.log(''req.session.user)
+  //if( req.session.user ){
+  res.render('index');
+  // } else {
+    // res.render('login');
+  // }
 });
 
 app.get('/create', 
@@ -120,7 +117,6 @@ app.post('/signup', function(req, res) {
   var salt = bcrypt.genSaltSync(10);
   var hash = bcrypt.hashSync(password, salt);
   
-  // var userObj = db.users.findOne({ username: username, password: hash });
   new User({  
     // The query will match these parameters
     'username': username,
@@ -134,16 +130,6 @@ app.post('/signup', function(req, res) {
   }).catch(function(err) {
     console.log('Error creating new user', err);
   });
-
-  // if(userObj){
-  //     req.session.regenerate(function(){
-  //         req.session.user = userObj.username;
-  //         res.redirect('/restricted');
-  //     });
-  // }
-  // else {
-  //     res.redirect('signup');
-  // }
 });
 
 app.post('/login', function(request, response) {
@@ -171,16 +157,7 @@ app.post('/login', function(request, response) {
     console.log('Error retriving user', err);
     response.redirect('/login'); 
   });
-
-    // if(username == 'demo' && password == 'demo'){
-    //     request.session.regenerate(function(){
-    //     request.session.user = username;
-    //     response.redirect('/restricted');
-    //     });
-    // }
-    // else {
-    //    res.redirect('login');
-    // }    
+  
 });
 
 /************************************************************/
