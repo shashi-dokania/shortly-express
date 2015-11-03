@@ -5,16 +5,18 @@ var bodyParser = require('body-parser');
 var bcrypt = require('bcrypt-nodejs');
 var session = require('express-session');
 var cookieParser = require('cookie-parser');
-var knexSessionStore = require('connect-session-knex')(session);
+//var knexSessionStore = require('connect-session-knex')(session);
+var BookshelfStore = require('connect-bookshelf')(session);
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
+var Session = require('./app/models/session');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
-var sessionStore = new knexSessionStore({knex: db.knex});
+// var sessionStore = new knexSessionStore({knex: db.knex});
 
 var app = express();
 
@@ -28,16 +30,30 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //app.use(cookieParser('this is not really secret'));
 app.use(session({
   secret: 'this is not really secret',
-  store: sessionStore,
-  //cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } 
+  // store: new BookshelfStore({model: Session}),
+  // cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } 
 }));
-app.use(express.static(__dirname + '/public'));
 
+app.use(express.static(__dirname + '/public'));
 
 app.get('/', 
 function(req, res) {
-  console.log(sessionStore);
-  res.render('index');
+  console.log(req.session.user)
+  if( req.session.user ){
+  // console.log(req.sessionID);
+  // var cookieSid = req.sessionID;
+  // var savedSession = new Session({  
+  //   'sid': cookieSid
+  // }).fetch().then(function(session){
+  //   console.log('SID found: access granted');
+    res.render('index');
+  } else {
+  // }).catch(function(err) {
+  //   console.log('SID not found');
+    res.render('login');
+  // });
+  }
+
 });
 
 app.get('/create', 
